@@ -1,0 +1,43 @@
+# pve-auto-postfix.yml
+# Mairien Anthony - Notamax
+# Mis à jour le 17-03-2020
+---
+
+- hosts: proxmox
+  remote_user: root
+  vars_prompt:
+   - name: smtp_server
+     prompt: "Quel est votre serveur SMTP ? A encoder sous la forme FQDN, par ex. mail.notamax.be"
+     private: no
+   - name: email
+     prompt: "Quel est l'email à utiliser pour l'envoi? Sous forme complète, par ex. contact@notamax.be"
+     private: no
+   - name: password_mail
+     prompt: "Quel est le mot de passe pour cette adresse mail? Attention, les caractères ne sont pas cachés à l'écran"
+     private: no
+  tasks:
+    - name: I) Installation des dépendances requises et de Postfix
+      apt:
+         name: ['python-pip','sasl2-bin','libsasl2-2','libsasl2-modules','postfix']
+    - name: II) Backup du fichier de configuration du serveur d'authentification SASL
+      shell: cp /etc/default/saslauthd /etc/default/saslauhtd.bck
+    - name: III) Activation au démarrage du serveur d'authentification SASL
+      replace:
+         path: /etc/default/saslauthd
+         regexp: 'START=no'
+         replace: 'START=yes' 
+    - name: IV) Backup du fichier de configuration de Postfix
+      shell: cp /etc/postfix/main.cf /etc/postfix/main.cf.bck
+    - name: V) Remplacement du serveur SMTP par défaut dans Postfix
+      replace:
+         path: /etc/postfix/main.cf
+         regexp: 'relayhost ='
+         replace: 'relayhost=[{{smtp_server}}]:587'
+    - name: VI) Finalisation de la configuration Postfix
+      shell: cd /root && wget https://raw.githubusercontent.com/IT-Anthony/PVEautoPostfix/master/config_postfix && cat config_postfix >> /etc/postfix/main.cf 
+    - name: VII) Création du fichier SASL_PASSWD et sécurisation
+      shell: echo '' > /etc/postfix/sasl_passwd && chown root:root /etc/postfix/sasl_passwd && chmod 600 /etc/postfix/sasl_passwd                   
+    - name: VIII) Encodage des credentials dans le fichier SASL_PASSWD
+      shell: echo [{{smtp_server}}]:587 {{email}}:{{password_mail}} >> /etc/postfix/sasl_passwd
+    - name: IX) Finalisation et redémarrage du service Postfix
+      shell: postmap /etc/postfix/sasl_passwd && postfix check && /etc/init.d/postfix restart
