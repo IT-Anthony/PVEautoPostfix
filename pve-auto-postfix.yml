@@ -7,10 +7,10 @@
   remote_user: root
   vars_prompt:
    - name: smtp_server
-     prompt: "Quel est votre serveur SMTP ? A encoder sous la forme FQDN, par ex. mail.notamax.be"
+     prompt: "Quel est votre serveur SMTP ? A encoder sous la forme FQDN, par ex. mail.domain.be"
      private: no
    - name: email
-     prompt: "Quel est l'email à utiliser pour l'envoi? Sous forme complète, par ex. contact@notamax.be"
+     prompt: "Quel est l'email à utiliser pour l'envoi? Sous forme complète, par ex. contact@domain.be"
      private: no
    - name: password_mail
      prompt: "Quel est le mot de passe pour cette adresse mail? Attention, les caractères ne sont pas cachés à l'écran"
